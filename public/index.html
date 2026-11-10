@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLUX — Daily #001</title>
+<style>
+:root{color-scheme:dark;--bg:#08111e;--panel:#101d2d;--panel2:#15263a;--line:#263b52;--text:#edf5ff;--muted:#9db0c5;--cyan:#55dcfa;--green:#78e0b0;--amber:#ffd27a}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -15%,#18334b 0%,#0b1727 45%,var(--bg) 100%);color:var(--text);font:15px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+.wrap{width:min(960px,100%);margin:auto;padding:28px 18px 40px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+.brand{font-weight:850;letter-spacing:.22em;font-size:22px}.brand span{color:var(--cyan)}
+.daily{font-size:12px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+h1{font-size:clamp(27px,5vw,40px);line-height:1.08;margin:0 0 8px;letter-spacing:-.04em}
+.sub{color:var(--muted);margin:0 0 22px}
+.layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(245px,.75fr);gap:18px;align-items:start}
+.panel{background:linear-gradient(160deg,rgba(21,38,58,.96),rgba(13,26,42,.97));border:1px solid var(--line);border-radius:18px;padding:17px;box-shadow:0 18px 55px #0004}
+.board-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;gap:12px;flex-wrap:wrap}
+.board-head strong{font-size:14px}
+.levels{display:flex;gap:6px}
+button.pill{padding:6px 11px;border-radius:8px;font-size:12px;color:var(--muted)}
+button.pill.on{border-color:var(--cyan);color:var(--text)}
+button.pill.done{border-color:#367d66;color:var(--green)}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;max-width:560px;margin:auto}
+.cell{aspect-ratio:1;border:1px solid #263b50;border-radius:10px;background:#0b1929;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0}
+.cell.empty{background:linear-gradient(145deg,#102136,#0b1929)}
+.cell.wall{background:repeating-linear-gradient(45deg,#0a1523 0 5px,#0e1c2d 5px 10px);border-color:#1e3146}
+.cell.mirror{cursor:pointer;background:linear-gradient(145deg,#1b3046,#102237);border-color:#3a5874;transition:border-color .15s,transform .15s}
+.cell.mirror:hover{border-color:var(--cyan);transform:translateY(-1px)}
+.cell.mirror:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.ico{width:68%;height:68%;position:relative;z-index:2;pointer-events:none;filter:drop-shadow(0 0 5px #55dcfa66)}
+.cell.source,.cell.splitter,.cell.target{border-color:#3c637e;background:#10283b}
+.cell.source .symbol,.cell.target .symbol{font-size:clamp(19px,3.5vw,29px);z-index:2;position:relative}
+.cell.target{border-color:#52647a}.cell.target.active{border-color:var(--green);background:#12382f;box-shadow:inset 0 0 20px #55e3ae22}
+.cell.target.active .symbol{color:var(--green);text-shadow:0 0 14px #55e3ae}
+.beam{position:absolute;z-index:1;background:var(--cyan);box-shadow:0 0 8px var(--cyan),0 0 17px #55dcfa88;opacity:.95}
+.beam.t,.beam.b{width:4px;height:50%;left:calc(50% - 2px)}
+.beam.l,.beam.r{height:4px;width:50%;top:calc(50% - 2px)}
+.beam.t{top:0}.beam.b{top:50%}.beam.l{left:0}.beam.r{left:50%}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+button{border:1px solid #35516d;border-radius:10px;padding:10px 14px;background:#172b41;color:var(--text);font:600 13px/1.2 system-ui,-apple-system,Segoe UI,sans-serif;cursor:pointer}
+button:hover{border-color:var(--cyan);background:#1b354e}
+button.primary{background:var(--cyan);border-color:var(--cyan);color:#062033}
+button:disabled{opacity:.42;cursor:not-allowed}
+button[hidden]{display:none}
+.side{display:grid;gap:12px}
+.statrow{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.stat{background:#0c1a2a;border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat .label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.stat .value{font-size:25px;font-weight:750;margin-top:3px}
+.section-title{font-size:13px;font-weight:750;margin:0 0 9px}
+p{margin:0;color:var(--muted);font-size:13px}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.legend-item{display:flex;align-items:center;gap:8px;color:#c9d7e5;font-size:12px}
+.legend-icon{width:27px;height:27px;display:grid;place-items:center;background:#1b3046;border:1px solid #35516d;border-radius:7px;color:var(--cyan);font-size:16px}
+.legend-icon .ico{width:21px;height:21px;filter:none}
+.message{border-radius:12px;padding:12px;background:#0b1b2b;border:1px solid var(--line);color:var(--muted);font-size:13px;min-height:54px}
+.message.good{border-color:#367d66;background:#103126;color:#baf5dc}
+.message.warn{border-color:#80643a;background:#302718;color:#ffe0a6}
+details{border-top:1px solid var(--line);padding-top:12px}
+summary{font-weight:700;font-size:13px;cursor:pointer}
+details p{margin-top:9px}
+.bars{display:flex;align-items:flex-end;gap:3px;height:72px;margin-top:12px}.bar{flex:1;background:#2a4a66;border-radius:3px 3px 0 0;display:block}.bar.me{background:var(--cyan);box-shadow:0 0 10px #55dcfa66}.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px}
+.footer{margin-top:18px;text-align:center;color:#71869c;font-size:11px}
+@media(max-width:720px){.layout{grid-template-columns:1fr}.side{grid-template-columns:1fr 1fr}.side .panel:first-child{grid-column:1/-1}}
+@media(max-width:420px){.wrap{padding:19px 12px 28px}.panel{padding:12px}.grid{gap:4px}.cell{border-radius:7px}.side{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="brand">FL<span>U</span>X</div><div class="daily" id="daily">THE DAILY GRID</div></header>
+  <h1>Find the flow.</h1>
+  <p class="sub">Five grids a day, same for everyone. Route energy into every target in as few moves as you can.</p>
+  <main class="layout">
+    <section class="panel">
+      <div class="board-head"><strong id="title"></strong><div class="levels" id="levels" role="group" aria-label="Levels"></div></div>
+      <div id="grid" class="grid" role="group" aria-label="Six by six puzzle grid"></div>
+      <div class="controls">
+        <button class="primary" id="undo">↶ Undo</button>
+        <button id="reset">Reset board</button>
+        <button class="primary" id="next" hidden>Next level</button>
+      </div>
+    </section>
+    <aside class="side">
+      <section class="panel">
+        <div class="statrow">
+          <div class="stat"><div class="label" id="movesLabel">Moves</div><div class="value" id="moves">0</div></div>
+          <div class="stat"><div class="label">Targets</div><div class="value" id="targets">0 / 2</div></div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="message" id="message" aria-live="polite"></div>
+      </section>
+      <section class="panel">
+        <h2 class="section-title">Components</h2>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-icon">●</span>Source</div>
+          <div class="legend-item"><span class="legend-icon">◎</span>Target</div>
+          <div class="legend-item"><span class="legend-icon" id="legMirror"></span>Mirror</div>
+          <div class="legend-item"><span class="legend-icon" id="legSplit"></span>Splitter</div>
+        </div>
+        <div style="height:13px"></div>
+        <h2 class="section-title">How to play</h2>
+        <p>The source sends energy upward. A splitter lets the beam continue straight and also sends a copy 90° to its left. Mirrors turn beams by 90°. Beams stop at targets and walls. Activate every target.</p>
+      </section>
+      <section class="panel" id="summary" hidden>
+        <h2 class="section-title">Day complete</h2>
+        <p id="summaryText"></p>
+        <div id="result"></div>
+      </section>
+      <section class="panel">
+        <details>
+          <summary>Scoring</summary>
+          <p id="scoring">Your score is the total number of rotations across all five grids. Par is the fewest possible on each grid. Undo and reset put the board back but do not refund moves, and a finished grid is locked. 3 stars: par. 2 stars: up to 2 over. 1 star: 3 or more over.</p>
+        </details>
+      </section>
+    </aside>
+  </main>
+  <div class="footer">A small daily puzzle. Same grids for everyone.</div>
+  
+</div>
+<script type="module">
+import { sim } from "./engine.js";
+(async () => {
+  const N=6, key=(r,c)=>r+","+c, $=id=>document.getElementById(id);
+  const mirrorIco=s=>`<svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(${s?-45:45} 24 24)"><rect x="5" y="25" width="38" height="5" rx="2.5" fill="#587891"/><rect x="5" y="18.5" width="38" height="6" rx="3" fill="#f2f8ff"/></g><circle cx="24" cy="24" r="3.2" fill="#0b1929" stroke="#55dcfa" stroke-width="1.6"/></svg>`;
+  const splitIco=s=>`<svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="8" width="32" height="32" rx="7" fill="#0b1d2f" stroke="#7fb0d4" stroke-width="2"/><path d="${s?"M33 15L15 33":"M15 15L33 33"}" stroke="#55dcfa" stroke-width="3.2" stroke-linecap="round"/><circle cx="24" cy="24" r="3" fill="#edf5ff"/></svg>`;
+  $("legMirror").innerHTML=mirrorIco(true); $("legSplit").innerHTML=splitIco(0);
+  const grid=$("grid"), levelsEl=$("levels"), message=$("message"), undoBtn=$("undo"), resetBtn=$("reset"), nextBtn=$("next");
+
+  // The server decides which day it is and hands out only today's grids.
+  let D;
+  try{ const r=await fetch("/api/daily"); if(!r.ok) throw 0; D=await r.json(); }
+  catch(e){
+    $("title").textContent="No puzzle yet";
+    message.textContent="Couldn't load today's puzzle. Try again in a moment.";
+    undoBtn.disabled=resetBtn.disabled=true; return;
+  }
+  const {date,num,levels:LV}=D;
+  $("daily").textContent=`THE DAILY GRID · #${String(num).padStart(3,"0")}`;
+
+  // anonymous player id + per-day progress, saved so a refresh cannot be used as a free reset
+  let player; try{ player=localStorage.getItem("flux:player"); if(!player){ player=crypto.randomUUID(); localStorage.setItem("flux:player",player); } }catch(e){ player=crypto.randomUUID(); }
+  const SK="flux:"+date;
+  let P={logs:LV.map(()=>[]),done:LV.map(()=>false),t:LV.map(()=>({})),result:null};
+  try{ const s=JSON.parse(localStorage.getItem(SK)); if(s&&s.logs&&s.logs.length===LV.length) P={...P,...s}; }catch(e){}
+  const save=()=>{ try{ localStorage.setItem(SK,JSON.stringify(P)); }catch(e){} };
+
+  let cur=0, L, M0, M, hist, log, moves, submitting=false;
+  const rotations=l=>l.filter(e=>typeof e==="number").length;
+  const simulate=o=>sim(L,o);
+  const starsFor=(m,par)=>m<=par?3:m<=par+2?2:1;
+  const dayDone=()=>P.done.every(Boolean);
+  const fmt=ms=>{ const s=Math.round(ms/1000); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
+
+  // events: mirror index = rotate, "u" = undo, "r" = reset (same rules the server replays)
+  function applyEv(e){
+    if(typeof e==="number"){ hist.push(M.slice()); M[e]=!M[e]; }
+    else if(e==="u"){ if(hist.length) M=hist.pop(); }
+    else { M=M0.slice(); hist=[]; }
+  }
+  function act(e){
+    if(P.done[cur]) return;
+    if(!P.t[cur].a) P.t[cur].a=Date.now();
+    log.push(e); applyEv(e); P.logs[cur]=log; save(); render();
+  }
+  function loadLevel(i){
+    cur=i; L=LV[i]; M0=L.mir.map(m=>!!m[2]); M=M0.slice(); hist=[]; log=P.logs[i]||[];
+    log.forEach(applyEv); render();
+  }
+
+  function showResult(r){
+    $("summaryText").textContent=`${r.moves} moves against a par of ${r.par}, in ${fmt(r.ms)}. You rank ${r.rank.toLocaleString()} of ${r.players.toLocaleString()} today, ahead of ${r.beat}% of players.`;
+    const h=r.histogram; if(!h.length) return;
+    const lo=h[0][0], hi=h[h.length-1][0], size=Math.max(1,Math.ceil((hi-lo+1)/24)), bins=[];
+    for(let m=lo;m<=hi;m+=size){ const c=h.filter(x=>x[0]>=m&&x[0]<m+size).reduce((a,x)=>a+x[1],0); bins.push({m,c,me:r.moves>=m&&r.moves<m+size}); }
+    const max=Math.max(...bins.map(b=>b.c));
+    $("result").innerHTML=`<div class="bars" role="img" aria-label="Distribution of today's scores">${bins.map(b=>`<i class="bar${b.me?" me":""}" style="height:${Math.max(3,Math.round(100*b.c/max))}%" title="${b.m}${size>1?"–"+(b.m+size-1):""} moves: ${b.c} player${b.c===1?"":"s"}"></i>`).join("")}</div><div class="axis"><span>${lo} moves</span><span>${hi}</span></div>`;
+  }
+  async function submitDay(){
+    submitting=true;
+    try{
+      const ms=P.t.reduce((a,t)=>a+(t.a&&t.b?t.b-t.a:0),0);
+      const r=await fetch("/api/submit",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({date,player,logs:P.logs,ms})});
+      const j=await r.json();
+      if(r.ok){ P.result=j; save(); showResult(j); } else $("summaryText").textContent=`Your score couldn't be recorded: ${j.error}`;
+    }catch(e){ $("summaryText").textContent="Couldn't reach the server to record your score. Reload to try again."; }
+    submitting=false;
+  }
+  async function refreshResult(){
+    try{ const r=await fetch(`/api/result?date=${date}&player=${player}`); if(r.ok){ P.result=await r.json(); save(); showResult(P.result); } }catch(e){}
+  }
+
+  function render(){
+    const res=simulate(M), n=L.tg.length, mirrorAt=new Map(L.mir.map((m,i)=>[key(m[0],m[1]),i]));
+    const has=(a,r,c)=>a.some(t=>t[0]===r&&t[1]===c);
+    moves=rotations(log);
+    if(res.win&&!P.done[cur]){ P.done[cur]=true; P.t[cur].b=Date.now(); P.logs[cur]=log; save(); }
+    const done=P.done[cur];
+    grid.innerHTML="";
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      const k=key(r,c), mi=mirrorAt.get(k); let cell;
+      if(mi!==undefined){
+        cell=document.createElement("button"); cell.type="button"; cell.className="cell mirror";
+        cell.setAttribute("aria-label",`Mirror at row ${r+1}, column ${c+1}, orientation ${M[mi]?"slash":"backslash"}. Rotate.`);
+        cell.innerHTML=mirrorIco(M[mi]); cell.addEventListener("click",()=>act(mi));
+      } else {
+        cell=document.createElement("div"); cell.className="cell empty";
+        if(r===L.src.r&&c===L.src.c){ cell.className="cell source"; cell.innerHTML='<span class="symbol">●</span>'; cell.setAttribute("aria-label","Energy source"); }
+        else if(has(L.spl,r,c)){ cell.className="cell splitter"; cell.innerHTML=splitIco(res.inc[k]===undefined||res.inc[k]%2===0?0:1); cell.setAttribute("aria-label","Splitter"); }
+        else if(has(L.tg,r,c)){ const a=res.hits.has(k); cell.className="cell target"+(a?" active":""); cell.innerHTML=`<span class="symbol">${a?"✓":"◎"}</span>`; cell.setAttribute("aria-label",a?"Activated target":"Inactive target"); }
+        else if(has(L.walls,r,c)){ cell.className="cell wall"; cell.setAttribute("aria-label","Wall"); }
+      }
+      for(let d=0;d<4;d++) if(res.segs.has(k+":"+d)){ const b=document.createElement("i"); b.className="beam "+["t","r","b","l"][d]; cell.appendChild(b); }
+      grid.appendChild(cell);
+    }
+    $("title").textContent=`0${cur+1} / 05`;
+    $("moves").textContent=moves; $("movesLabel").textContent=`Moves · par ${L.par}`;
+    $("targets").textContent=`${res.hits.size} / ${n}`;
+    undoBtn.disabled=resetBtn.disabled=done||log.length===0;
+    [...levelsEl.children].forEach((p,i)=>p.className="pill"+(i===cur?" on":"")+(P.done[i]?" done":""));
+    if(done){
+      const s=starsFor(moves,L.par);
+      message.className="message good";
+      message.innerHTML=`<strong>Grid complete · ${"★".repeat(s)}${"☆".repeat(3-s)}</strong><br>${moves} move${moves===1?"":"s"} (par ${L.par}). This grid is locked.`;
+    } else {
+      message.className="message";
+      message.textContent=res.hits.size===0?"The source is emitting. Rotate mirrors to route the beams.":`${res.hits.size} of ${n} targets active. Keep routing the remaining beams.`;
+    }
+    const next=P.done.findIndex((d,i)=>!d&&i!==cur);
+    nextBtn.hidden=!(done&&next>=0);
+    $("summary").hidden=!dayDone();
+    if(dayDone()){
+      if(P.result) showResult(P.result);
+      else if(!submitting){ $("summaryText").textContent="Recording your score…"; submitDay(); }
+    }
+  }
+
+  LV.forEach((_,i)=>{
+    const b=document.createElement("button"); b.type="button"; b.textContent=i+1; b.setAttribute("aria-label",`Grid ${i+1}`);
+    b.addEventListener("click",()=>loadLevel(i)); levelsEl.appendChild(b);
+  });
+  undoBtn.addEventListener("click",()=>act("u"));
+  resetBtn.addEventListener("click",()=>act("r"));
+  nextBtn.addEventListener("click",()=>loadLevel(P.done.findIndex((d,i)=>!d&&i!==cur)));
+  loadLevel(Math.max(0,P.done.indexOf(false)));
+  if(dayDone()&&P.result) refreshResult();
+})();
+</script>
+</body>
+</html>

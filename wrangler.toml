@@ -1,0 +1,16 @@
+name = "flux-daily"
+main = "src/worker.js"
+compatibility_date = "2025-09-01"
+
+# Static site (index.html, engine.js). Anything that isn't a file here, like /api/*, goes to the Worker.
+[assets]
+directory = "./public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "flux"
+database_id = "aebdcd06-af2f-4f14-ac4b-c9fe741ab363"   # printed by: npx wrangler d1 create flux
+
+[vars]
+# The day rolls over at midnight in this timezone (Krillion uses Eastern). Use "UTC" for a global midnight.
+ROLLOVER_TZ = "America/New_York"
