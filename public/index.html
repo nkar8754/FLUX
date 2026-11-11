@@ -32,8 +32,23 @@ button.pill.done{border-color:#367d66;color:var(--green)}
 .ico{width:68%;height:68%;position:relative;z-index:2;pointer-events:none;filter:drop-shadow(0 0 5px #55dcfa66)}
 .cell.source,.cell.splitter,.cell.target{border-color:#3c637e;background:#10283b}
 .cell.source .symbol,.cell.target .symbol{font-size:clamp(19px,3.5vw,29px);z-index:2;position:relative}
-.cell.target{border-color:#52647a}.cell.target.active{border-color:var(--green);background:#12382f;box-shadow:inset 0 0 20px #55e3ae22}
+.cell.target{border-color:#b84457;background:#2a1220;box-shadow:0 0 16px #ff4d6a40,inset 0 0 18px #ff4d6a2e;animation:tpulse 2.2s ease-in-out infinite}
+.cell.target .symbol{color:#ff6b7d;text-shadow:0 0 12px #ff4d6a}
+.cell.target.active{border-color:var(--green);background:#12382f;box-shadow:0 0 18px #55e3ae55,inset 0 0 20px #55e3ae33;animation:none}
 .cell.target.active .symbol{color:var(--green);text-shadow:0 0 14px #55e3ae}
+@keyframes tpulse{50%{box-shadow:0 0 24px #ff4d6a66,inset 0 0 22px #ff4d6a44}}
+@media(prefers-reduced-motion:reduce){.cell.target{animation:none}}
+.cell.lit{box-shadow:inset 0 0 16px #55dcfa1f}
+.spark{position:absolute;z-index:1;pointer-events:none;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle,#b9f5dccc 0%,#55dcfa66 40%,transparent 70%)}
+.spark.t{top:-15px;left:calc(50% - 15px)}.spark.b{bottom:-15px;left:calc(50% - 15px)}.spark.l{left:-15px;top:calc(50% - 15px)}.spark.r{right:-15px;top:calc(50% - 15px)}
+.legend-icon.tgt{color:#ff6b7d}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.overlay{position:fixed;inset:0;background:#040a12cc;display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
+.overlay[hidden]{display:none}
+.tut{max-width:420px;width:100%}.tut h2{margin:0;font-size:20px;letter-spacing:-.02em}
+.tut ol{margin:14px 0 18px;padding:0;list-style:none;display:grid;gap:12px}
+.tut li{display:flex;gap:12px;align-items:center;color:#c9d7e5;font-size:14px}
+.tut li .legend-icon{flex:none;width:36px;height:36px}.tut li .legend-icon .ico{width:27px;height:27px}
 .beam{position:absolute;z-index:1;background:var(--cyan);box-shadow:0 0 8px var(--cyan),0 0 17px #55dcfa88;opacity:.95}
 .beam.t,.beam.b{width:4px;height:50%;left:calc(50% - 2px)}
 .beam.l,.beam.r{height:4px;width:50%;top:calc(50% - 2px)}
@@ -69,7 +84,7 @@ details p{margin-top:9px}
 </head>
 <body>
 <div class="wrap">
-  <header><div class="brand">FL<span>U</span>X</div><div class="daily" id="daily">THE DAILY GRID</div></header>
+  <header><div class="brand">FL<span>U</span>X</div><div class="hdr-right"><span class="daily" id="daily">THE DAILY GRID</span><button class="pill" id="help" type="button" aria-label="How to play">?</button></div></header>
   <h1>Find the flow.</h1>
   <p class="sub">Five grids a day, same for everyone. Route energy into every target in as few moves as you can.</p>
   <main class="layout">
@@ -95,7 +110,7 @@ details p{margin-top:9px}
         <h2 class="section-title">Components</h2>
         <div class="legend">
           <div class="legend-item"><span class="legend-icon">●</span>Source</div>
-          <div class="legend-item"><span class="legend-icon">◎</span>Target</div>
+          <div class="legend-item"><span class="legend-icon tgt">◎</span>Target</div>
           <div class="legend-item"><span class="legend-icon" id="legMirror"></span>Mirror</div>
           <div class="legend-item"><span class="legend-icon" id="legSplit"></span>Splitter</div>
         </div>
@@ -119,6 +134,18 @@ details p{margin-top:9px}
   <div class="footer">A small daily puzzle. Same grids for everyone.</div>
   
 </div>
+<div class="overlay" id="tut" role="dialog" aria-modal="true" aria-labelledby="tutTitle" hidden>
+  <div class="panel tut">
+    <h2 id="tutTitle">How to play</h2>
+    <ol>
+      <li><span class="legend-icon">●</span><span>The source fires a beam up the grid. Walls block it.</span></li>
+      <li><span class="legend-icon" data-ico="mirror"></span><span>Tap a mirror to flip it. Every tap is one move.</span></li>
+      <li><span class="legend-icon" data-ico="split"></span><span>A splitter lets the beam carry on and sends a copy to its left.</span></li>
+      <li><span class="legend-icon tgt">◎</span><span>Turn every red target green. Five grids a day, and fewer moves is better.</span></li>
+    </ol>
+    <button class="primary" id="tutOk" type="button">Got it</button>
+  </div>
+</div>
 <script type="module">
 import { sim } from "./engine.js";
 (async () => {
@@ -126,6 +153,13 @@ import { sim } from "./engine.js";
   const mirrorIco=s=>`<svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(${s?-45:45} 24 24)"><rect x="5" y="25" width="38" height="5" rx="2.5" fill="#587891"/><rect x="5" y="18.5" width="38" height="6" rx="3" fill="#f2f8ff"/></g><circle cx="24" cy="24" r="3.2" fill="#0b1929" stroke="#55dcfa" stroke-width="1.6"/></svg>`;
   const splitIco=s=>`<svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="8" width="32" height="32" rx="7" fill="#0b1d2f" stroke="#7fb0d4" stroke-width="2"/><path d="${s?"M33 15L15 33":"M15 15L33 33"}" stroke="#55dcfa" stroke-width="3.2" stroke-linecap="round"/><circle cx="24" cy="24" r="3" fill="#edf5ff"/></svg>`;
   $("legMirror").innerHTML=mirrorIco(true); $("legSplit").innerHTML=splitIco(0);
+  // first-visit tutorial, reopenable with the ? button
+  const tut=$("tut"); let seen=false; try{ seen=!!localStorage.getItem("flux:seen"); }catch(e){}
+  document.querySelector("#tut [data-ico=mirror]").innerHTML=mirrorIco(true); document.querySelector("#tut [data-ico=split]").innerHTML=splitIco(0);
+  const closeTut=()=>{ tut.hidden=true; try{ localStorage.setItem("flux:seen","1"); }catch(e){} };
+  $("tutOk").addEventListener("click",closeTut); $("help").addEventListener("click",()=>{ tut.hidden=false; });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!tut.hidden) closeTut(); });
+  tut.hidden=seen;
   const grid=$("grid"), levelsEl=$("levels"), message=$("message"), undoBtn=$("undo"), resetBtn=$("reset"), nextBtn=$("next");
 
   // The server decides which day it is and hands out only today's grids.
@@ -211,7 +245,9 @@ import { sim } from "./engine.js";
         else if(has(L.tg,r,c)){ const a=res.hits.has(k); cell.className="cell target"+(a?" active":""); cell.innerHTML=`<span class="symbol">${a?"✓":"◎"}</span>`; cell.setAttribute("aria-label",a?"Activated target":"Inactive target"); }
         else if(has(L.walls,r,c)){ cell.className="cell wall"; cell.setAttribute("aria-label","Wall"); }
       }
-      for(let d=0;d<4;d++) if(res.segs.has(k+":"+d)){ const b=document.createElement("i"); b.className="beam "+["t","r","b","l"][d]; cell.appendChild(b); }
+      const isT=has(L.tg,r,c);
+      for(let d=0;d<4;d++) if(res.segs.has(k+":"+d)){ const b=document.createElement("i"); b.className=(isT?"spark ":"beam ")+["t","r","b","l"][d]; cell.appendChild(b); }
+      if(!isT&&cell.querySelector(".beam")) cell.classList.add("lit");
       grid.appendChild(cell);
     }
     $("title").textContent=`0${cur+1} / 05`;
